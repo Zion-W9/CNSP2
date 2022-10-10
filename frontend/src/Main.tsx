@@ -1,5 +1,4 @@
 import React from 'react';
-import './App.css';
 import { Box, useTheme } from '@mui/material';
 import { css } from '@emotion/css';
 

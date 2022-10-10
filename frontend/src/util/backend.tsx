@@ -10,4 +10,16 @@ export const getBackendUrl = (): string => {
   return isProduction() ? prodUrl : devUrl;
 };
 
-export const fetchBackend = (path: string, options?: RequestInit): Promise<Response> => fetch(getBackendUrl() + path, options);
+export const fetchBackend = (path: string,  auth: boolean, options?: RequestInit, ): Promise<Response> => {
+  let opts = options;
+  if (auth) {
+    opts = {
+      ...options,
+      headers: {
+        ...options?.headers,
+        'Authorization': `Basic ${localStorage.getItem('auth')}`
+      }
+    };
+  }
+  return fetch(getBackendUrl() + path, opts);
+}

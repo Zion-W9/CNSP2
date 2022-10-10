@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './App.css';
 import { Alert, Box, Button, Grow, Paper, TextField, Typography } from '@mui/material';
 import { css } from '@emotion/css';
 import Main from './Main';
@@ -14,10 +13,10 @@ const TodoApp = (): JSX.Element => {
 
   const tryLogin = async () => {
     try {
-      // await fetchBackend('/login', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ username, password })
-      // });
+      await fetchBackend('/login', false, {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
       // login succeeded
       localStorage.setItem('auth', btoa(`${username}:${password}`));
       navigate('/');
