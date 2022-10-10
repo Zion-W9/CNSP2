@@ -15,23 +15,7 @@ type TodoItem = {
 
 const TodoApp = (): JSX.Element => {
   const theme = useTheme();
-  const [todos, setTodos] = useState<TodoItem[]>([
-    {
-      id: 0,
-      todo: "my first task!",
-      done: false
-    },
-    {
-      id: 1,
-      todo: "my second task!",
-      done: false
-    },
-    {
-      id: 2,
-      todo: "my last task!",
-      done: true
-    }
-  ]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
   const [username, password] = atob(localStorage.getItem('auth') as string).split(':');
   const [openAddDialog, setOpenAddDialog] = useState<boolean>(false);
   const [editField, setEditField] = useState<number | null>(null);
@@ -46,8 +30,8 @@ const TodoApp = (): JSX.Element => {
   useEffect(() => {
     const initLoad = async () => {
       try {
-        // const res = await fetchBackend('/todo', true);
-        // setTodos(await res.json());
+        const res = await fetchBackend('/todo', true);
+        setTodos(await res.json());
       }
       catch {
         setError('Could not add new item!');
