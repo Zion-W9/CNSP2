@@ -1,21 +1,24 @@
 import express, { Request, Response } from 'express';
+import { Pool } from 'pg';
+import cors from 'cors';
+
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const port = 3000
 
-const Pool = require('pg').Pool
 const db = new Pool({
   user: 'username',
-  host: 'localhost',
+  host: 'todo-db',
   database: 'cnsp',
   password: 'password',
-  port: 49153,
+  port: 5432,
 })
 
-type LoginBody = { username: string, password: string }
-type PostBody = { todo: string }
-type PatchBody = { done: boolean }
+type LoginBody = { username: string, password: string };
+type PostBody = { todo: string };
+type PatchBody = { done: boolean, text: string };
 
 function authorize(authorization: string): Promise<string> {
   const b64auth = (authorization || '').split(' ')[1] || ''
@@ -83,7 +86,7 @@ app.patch("/todo/:id", async (request: Request, response: Response) => {
     const body: PatchBody = request.body;
     const username = await authorize(request.headers.authorization)
     if (username) {
-      await db.query("UPDATE todos SET done = " + body.done + " WHERE id = " + request.params.id + " AND username = '" + username + "'")
+      await db.query("UPDATE todos SET done = " + body.done + ", text = '" + body.text + "' WHERE id = " + request.params.id + " AND username = '" + username + "'")
       response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()

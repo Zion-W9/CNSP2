@@ -1,0 +1,27 @@
+version: '3.9'
+services:
+  todo-db:
+    container_name: todo-db
+    image: postgres
+    environment:
+      POSTGRES_DB: cnsp
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./db/:/docker-entrypoint-initdb.d/
+    ports:
+      - 5432:5432
+  todo-frontend:
+    build: 
+      context: ./frontend
+      args:
+        REACT_APP_ENV: production
+        REACT_APP_BACKEND_URL: http://localhost:3001
+    container_name: todo-frontend
+    ports:
+      - 3000:3000
+  todo-backend:
+    build: ./backend
+    container_name: todo-backend
+    ports:
+      - 3001:3000

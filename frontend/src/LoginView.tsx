@@ -13,10 +13,13 @@ const TodoApp = (): JSX.Element => {
 
   const tryLogin = async () => {
     try {
-      await fetchBackend('/login', false, {
+      const resp = await fetchBackend('/login', false, {
         method: 'POST',
         body: JSON.stringify({ username, password })
       });
+      if (resp.status !== 200) {
+        throw new Error();
+      }
       // login succeeded
       localStorage.setItem('auth', btoa(`${username}:${password}`));
       navigate('/');

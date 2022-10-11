@@ -9,7 +9,7 @@ import CustomCollapse from './CustomCollapse';
 
 type TodoItem = {
   id: number,
-  todo: string,
+  text: string,
   done: boolean
 };
 
@@ -42,6 +42,7 @@ const TodoApp = (): JSX.Element => {
   }, []);
 
   const handleItemAdd = async (todo: string) => {
+    setOpenAddDialog(false);
     setError(null);
     setLoading(-1);
     try {
@@ -49,6 +50,9 @@ const TodoApp = (): JSX.Element => {
         method: 'POST',
         body: JSON.stringify({ todo })
       });
+      if (res.status !== 201) {
+        throw new Error();
+      }
       setTodos(await res.json());
       setLoading(null);
     }
@@ -72,6 +76,9 @@ const TodoApp = (): JSX.Element => {
         method: 'PATCH',
         body: JSON.stringify(item)
       });
+      if (res.status !== 200) {
+        throw new Error();
+      }
       setTodos(await res.json());
       setEditField(null);
     }
@@ -84,7 +91,7 @@ const TodoApp = (): JSX.Element => {
   const handleEditConfirm = (i: number) => {
     sendItemEdit(i, {
       id: todos[i].id,
-      todo: editedContent,
+      text: editedContent,
       done: todos[i].done
     });
   };
@@ -92,7 +99,7 @@ const TodoApp = (): JSX.Element => {
   const handleDoneChange = (i: number, done: boolean) => {
     sendItemEdit(i, {
       id: todos[i].id,
-      todo: todos[i].todo,
+      text: todos[i].text,
       done: done
     });
   };
@@ -104,6 +111,9 @@ const TodoApp = (): JSX.Element => {
       const res = await fetchBackend(`/TODO/${item.id}`, true, {
         method: 'DELETE'
       });
+      if (res.status !== 200) {
+        throw new Error();
+      }
       setTodos(await res.json());
       setEditField(null);
     }
@@ -124,7 +134,7 @@ const TodoApp = (): JSX.Element => {
   const todoItems = todos.map((td, i) => (
     <CustomCollapse orientation="vertical" timeout={1000} delay={100 * i + 500} key={i}>
       <TextField
-        value={editField === i ? editedContent : td.todo}
+        value={editField === i ? editedContent : td.text}
         fullWidth
         sx={{
           marginTop: 2

@@ -1,0 +1,13 @@
+FROM node:alpine
+
+ARG NODE_ENV
+ENV NODE_ENV=$NODE_ENV
+ARG BACKEND_URL
+ENV BACKEND_URL=$BACKEND_URL
+
+WORKDIR /app
+COPY package.json ./
+COPY package-lock.json ./
+COPY ./ ./
+RUN npm i
+CMD ["npm", "start"]

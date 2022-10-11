@@ -1,11 +1,11 @@
 
 export const isProduction = (): boolean => {
-  return process.env.NODE_ENV === "production";
+  return process.env.REACT_APP_ENV === "production";
 };
 
 export const getBackendUrl = (): string => {
-  const prodUrl = 'https://securetodo-backend';
-  const devUrl = 'http://localhost:8000';
+  const devUrl = 'http://localhost:3001';
+  const prodUrl = process.env.REACT_APP_BACKEND_URL ?? devUrl;
 
   return isProduction() ? prodUrl : devUrl;
 };
@@ -21,5 +21,12 @@ export const fetchBackend = (path: string,  auth: boolean, options?: RequestInit
       }
     };
   }
+  opts = {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...opts?.headers,
+    }
+  };
   return fetch(getBackendUrl() + path, opts);
 }
