@@ -31,6 +31,11 @@ async function lookupUser(username: string, password: string): Promise<string> {
   return null
 }
 
+async function getTodos(username: string) {
+  const result = await db.query("SELECT * FROM todos WHERE username = '" + username + "'")
+  return result.rows
+}
+
 app.post("/login", async (request: Request, response: Response) => {
   try {
     const body: LoginBody = request.body
@@ -49,8 +54,7 @@ app.get("/todo", async (request: Request, response: Response) => {
   try {
     const username = await authorize(request.headers.authorization)
     if (username) {
-      const result = await db.query("SELECT * FROM todos WHERE username = '" + username + "'")
-      response.status(200).json(result.rows)
+      response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()
     }
@@ -65,7 +69,7 @@ app.post("/todo", async (request: Request, response: Response) => {
     const username = await authorize(request.headers.authorization)
     if (username) {
       await db.query("INSERT INTO todos (text, username, done) VALUES ('" + body.todo + "', '" + username + "', false)")
-      response.status(201).send()
+      response.status(201).json(await getTodos(username))
     } else {
       response.status(401).send()
     }
@@ -80,7 +84,7 @@ app.patch("/todo/:id", async (request: Request, response: Response) => {
     const username = await authorize(request.headers.authorization)
     if (username) {
       await db.query("UPDATE todos SET done = " + body.done + " WHERE id = " + request.params.id + " AND username = '" + username + "'")
-      response.status(200).send()
+      response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()
     }
@@ -94,7 +98,7 @@ app.delete("/todo/:id", async (request: Request, response: Response) => {
     const username = await authorize(request.headers.authorization)
     if (username) {
       await db.query("DELETE FROM todos WHERE id = " + request.params.id + " AND username = '" + username + "'")
-      response.status(200).send()
+      response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()
     }
