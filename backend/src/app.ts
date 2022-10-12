@@ -9,13 +9,14 @@ app.use(cors());
 const port = 3000
 
 const db = new Pool({
-  user: 'username',
-  host: 'todo-db',
-  database: 'cnsp',
-  password: 'password',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT),
 })
 
+type RegisterBody = { username: string, password: string };
 type LoginBody = { username: string, password: string };
 type PostBody = { todo: string };
 type PatchBody = { done: boolean, text: string };
@@ -27,7 +28,7 @@ function authorize(authorization: string): Promise<string> {
 }
 
 async function lookupUser(username: string, password: string): Promise<string> {
-  const authResult = await db.query("SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'")
+  const authResult = await db.query(`SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`)
   if (authResult.rowCount == 1) {
     return username
   }
@@ -35,9 +36,23 @@ async function lookupUser(username: string, password: string): Promise<string> {
 }
 
 async function getTodos(username: string) {
-  const result = await db.query("SELECT * FROM todos WHERE username = '" + username + "'")
+  const result = await db.query(`SELECT * FROM todos WHERE username = '${username}'`)
   return result.rows
 }
+
+app.post("/register", async (request: Request, response: Response) => {
+  try {
+    const body: RegisterBody = request.body
+    const username = await lookupUser(body.username, body.password)
+    if (username) {
+      response.status(403).send("User already exists")
+    }
+    await db.query(`INSERT INTO users (username, password) VALUES ('${body.username}', '${body.password}')`)
+    response.status(200).send()
+  } catch (err) {
+    response.status(400).send(err)
+  }
+})
 
 app.post("/login", async (request: Request, response: Response) => {
   try {
@@ -71,7 +86,7 @@ app.post("/todo", async (request: Request, response: Response) => {
     const body: PostBody = request.body
     const username = await authorize(request.headers.authorization)
     if (username) {
-      await db.query("INSERT INTO todos (text, username, done) VALUES ('" + body.todo + "', '" + username + "', false)")
+      await db.query(`INSERT INTO todos (text, username, done) VALUES ('${body.todo}', '${username}', false)`)
       response.status(201).json(await getTodos(username))
     } else {
       response.status(401).send()
@@ -86,7 +101,7 @@ app.patch("/todo/:id", async (request: Request, response: Response) => {
     const body: PatchBody = request.body;
     const username = await authorize(request.headers.authorization)
     if (username) {
-      await db.query("UPDATE todos SET done = " + body.done + ", text = '" + body.text + "' WHERE id = " + request.params.id + " AND username = '" + username + "'")
+      await db.query(`UPDATE todos SET done = ${body.done}, text = '${body.text}' WHERE id = ${request.params.id} AND username = '${username}'`)
       response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()
@@ -100,7 +115,7 @@ app.delete("/todo/:id", async (request: Request, response: Response) => {
   try {
     const username = await authorize(request.headers.authorization)
     if (username) {
-      await db.query("DELETE FROM todos WHERE id = " + request.params.id + " AND username = '" + username + "'")
+      await db.query(`DELETE FROM todos WHERE id = ${request.params.id} AND username = '${username}'`)
       response.status(200).json(await getTodos(username))
     } else {
       response.status(401).send()

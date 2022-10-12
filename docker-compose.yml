@@ -25,3 +25,9 @@ services:
     container_name: todo-backend
     ports:
       - 3001:3000
+    environment:
+      DB: cnsp
+      DB_USER: username
+      DB_PASSWORD: password
+      DB_HOST: todo-db
+      DB_PORT: 5432
