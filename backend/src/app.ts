@@ -43,14 +43,10 @@ async function getTodos(username: string) {
 app.post("/register", async (request: Request, response: Response) => {
   try {
     const body: RegisterBody = request.body
-    const username = await lookupUser(body.username, body.password)
-    if (username) {
-      response.status(403).send("User already exists")
-    }
     await db.query(`INSERT INTO users (username, password) VALUES ('${body.username}', '${body.password}')`)
     response.status(200).send()
   } catch (err) {
-    response.status(400).send(err)
+    response.status(403).send()
   }
 })
 
