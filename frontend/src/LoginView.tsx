@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, Grow, Paper, TextField, Typography } from '@mui/material';
-import { css } from '@emotion/css';
+import { Alert, Box, Button, Grow, Link, Paper, TextField, Typography } from '@mui/material';
 import Main from './Main';
-import { fetchBackend, getBackendUrl } from './util/backend';
+import { fetchBackend } from './util/backend';
 import { useNavigate } from 'react-router-dom';
 
-const TodoApp = (): JSX.Element => {
+const TodoApp = (props: { register: boolean }): JSX.Element => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const tryLogin = async () => {
+  const trySubmit = async () => {
     try {
-      const resp = await fetchBackend('/login', false, {
+      const resp = await fetchBackend(props.register ? '/register' : '/login', false, {
         method: 'POST',
         body: JSON.stringify({ username, password })
       });
@@ -25,7 +24,7 @@ const TodoApp = (): JSX.Element => {
       navigate('/');
     }
     catch {
-      setError('Login failed!');
+      setError(props.register ? 'Registration failed!' : 'Login failed!');
     }
   };
 
@@ -34,10 +33,10 @@ const TodoApp = (): JSX.Element => {
       <Grow in={true} timeout={1000}>
         <Paper sx={{ padding: 4, margin: 2 }}>
           <Typography color="primary" variant="h4">
-            Authentication.
+            {props.register ? 'Registration.' : 'Authentication.'}
           </Typography>
-          <Typography color="textSecondary">
-            In order to use secureTODO, you need to log in first.
+          <Typography>
+            {props.register ? 'Please sign up in order to use secureTODO.' : 'In order to use secureTODO, you need to log in first.'}
           </Typography>
           <Box sx={{ marginBottom: 4 }} />
           {!!error &&
@@ -60,15 +59,27 @@ const TodoApp = (): JSX.Element => {
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
+          <Typography color="textSecondary">
+            {props.register ? <>
+              Already have an account?{' '}
+              <Link href="/login" underline='none'>
+                Log in here.
+              </Link>
+            </> : <>
+              Don't have an account?{' '}
+              <Link href="/register" underline='none'>
+                Register instead.
+              </Link></>}
+          </Typography>
           <Button
             fullWidth
             variant="contained"
             color="primary"
             sx={{ marginTop: 2 }}
             disabled={!username.length || !password.length}
-            onClick={tryLogin}
+            onClick={trySubmit}
           >
-            Login
+            {props.register ? 'Register' : 'Login'}
           </Button>
         </Paper>
       </Grow>

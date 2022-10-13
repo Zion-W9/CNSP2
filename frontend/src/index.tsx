@@ -38,7 +38,13 @@ const Root = () => {
     {
       path: '/login',
       element: (
-        <LoginView />
+        <LoginView register={false}/>
+      )
+    },
+    {
+      path: '/register',
+      element: (
+        <LoginView register={true}/>
       )
     }
   ]);
