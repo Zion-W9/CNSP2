@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Box, Checkbox, CircularProgress, Collapse, Fab, Grow, IconButton, InputAdornment, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Fab, Grow, IconButton, InputAdornment, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
 import Main from './Main';
 import { TransitionGroup } from 'react-transition-group';
-import { Add, CheckCircle, Delete } from '@mui/icons-material';
+import { Add, CheckCircle, Delete, Logout } from '@mui/icons-material';
 import AddTodoDialog from './AddTodoDialog';
 import { fetchBackend } from './util/backend';
 import CustomCollapse from './CustomCollapse';
+import { useNavigate } from "react-router-dom";
 
 type TodoItem = {
   id: number,
@@ -26,6 +27,7 @@ const TodoApp = (): JSX.Element => {
   // 0 - n = item n is loading
   const [loading, setLoading] = useState<number | null>(-1);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const initLoad = async () => {
@@ -123,6 +125,11 @@ const TodoApp = (): JSX.Element => {
     setLoading(null);
   };
 
+  const handleLogoutClick = () => {
+    localStorage.removeItem('auth');
+    navigate('/login');
+  };
+
   const loader = (
     <Collapse key="loading" orientation="vertical">
       <Box display="flex" justifyContent="center" marginTop={3}>
@@ -196,6 +203,17 @@ const TodoApp = (): JSX.Element => {
           margin: 2,
           width: '900px'
         }}>
+          <IconButton 
+            color="primary" 
+            sx={{
+              display: 'flex', 
+              marginLeft: 'auto !important', 
+              marginRight: 0
+              }}
+            onClick={handleLogoutClick}
+          >
+            <Logout/>
+          </IconButton>
           <Box>
             <Typography variant="h3" color="primary">
               secureTODO
