@@ -46,7 +46,6 @@ const TodoApp = (): JSX.Element => {
   const handleItemAdd = async (todo: string) => {
     setOpenAddDialog(false);
     setError(null);
-    setLoading(-1);
     try {
       const res = await fetchBackend('/todo', true, {
         method: 'POST',
@@ -56,7 +55,6 @@ const TodoApp = (): JSX.Element => {
         throw new Error();
       }
       setTodos(await res.json());
-      setLoading(null);
     }
     catch {
       setError('Could not load your todos!');
