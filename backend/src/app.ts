@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Pool } from 'pg';
 import cors from 'cors';
+import bcrypt from 'bcryptjs';
 
 const apiLimiter = rateLimit({
 	windowMs: 60 * 1000,
@@ -52,9 +53,11 @@ function authorize(authorization: string): Promise<string> {
 }
 
 async function lookupUser(username: string, password: string): Promise<string> {
-  const authResult = await db.query("SELECT 1 FROM users WHERE username = $1 AND password = $2", [username, password])
+  const authResult = await db.query("SELECT username, password FROM users WHERE username = $1", [username])
   if (authResult.rowCount == 1) {
-    return username
+    if (bcrypt.compareSync(password, authResult.rows[0].password)) {
+      return authResult.rows[0].username
+    }
   }
   return null
 }
@@ -77,7 +80,8 @@ app.post("/register", createAccountLimiter, async (request: Request, response: R
     } else if (body.password.length < 8) {
       response.status(403).send(PASSWORD_TOO_SHORT_ERROR)
     } else {
-      await db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [body.username, body.password])
+      const hash = bcrypt.hashSync(body.password)
+      await db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [body.username, hash])
       response.status(200).send()
     }
   } catch (err) {

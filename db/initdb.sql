@@ -9,6 +9,3 @@ CREATE TABLE IF NOT EXISTS todos (
   username TEXT REFERENCES users (username),
   done BOOLEAN
 );
-
-INSERT INTO users (username, password) VALUES ('alice', 'wonderland')
-ON CONFLICT DO NOTHING;
