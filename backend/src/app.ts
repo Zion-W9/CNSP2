@@ -31,7 +31,9 @@ const db = new Pool({
 const port = 3000
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
 app.use(apiLimiter);
 
 type RegisterBody = { username: string, password: string };
