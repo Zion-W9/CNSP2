@@ -17,7 +17,7 @@ export const fetchBackend = (path: string,  auth: boolean, options?: RequestInit
       ...options,
       headers: {
         ...options?.headers,
-        'Authorization': `Basic ${localStorage.getItem('auth')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('auth')}`
       }
     };
   }
@@ -30,3 +30,5 @@ export const fetchBackend = (path: string,  auth: boolean, options?: RequestInit
   };
   return fetch(getBackendUrl() + path, opts);
 }
+
+export const isTokenExpired = (token: string): boolean => Date.now() >= (JSON.parse(atob(token.split('.')[1]))).exp * 1000;

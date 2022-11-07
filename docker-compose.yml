@@ -31,3 +31,4 @@ services:
       DB_PASSWORD: password
       DB_HOST: todo-db
       DB_PORT: 5432
+      JWT_SECRET: mjk-qgz7fwh_kac@RBF

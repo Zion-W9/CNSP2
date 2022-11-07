@@ -3,21 +3,22 @@ import rateLimit from 'express-rate-limit';
 import { Pool } from 'pg';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const apiLimiter = rateLimit({
-	windowMs: 60 * 1000,
-	max: 60, // Limit each IP to one request per second
+  windowMs: 60 * 1000,
+  max: 60, // Limit each IP to one request per second
   message: "Too many requests",
-	standardHeaders: true,
-	legacyHeaders: false,
+  standardHeaders: true,
+  legacyHeaders: false,
 })
 
 const createAccountLimiter = rateLimit({
-	windowMs: 5 * 60 * 1000,
-	max: 3, // Limit each IP to create three accounts per five minutes
-	message: "Too many accounts created from this IP, please try again later",
-	standardHeaders: true,
-	legacyHeaders: false,
+  windowMs: 5 * 60 * 1000,
+  max: 3, // Limit each IP to create three accounts per five minutes
+  message: "Too many accounts created from this IP, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
 })
 
 const db = new Pool({
@@ -27,6 +28,7 @@ const db = new Pool({
   password: process.env.DB_PASSWORD,
   port: parseInt(process.env.DB_PORT),
 })
+
 
 const port = 3000
 const app = express();
@@ -48,10 +50,20 @@ const UNAUTHORIZED_ERROR = "User unauthorized";
 const UNEXPECTED_ERROR = "An unexpected error has occured";
 
 
+function createJWT(username: string) {
+  // create a jwt that's valid for 1 hour, valid only for this user
+  return jwt.sign({ user: username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+}
+
 function authorize(authorization: string): Promise<string> {
-  const b64auth = (authorization || '').split(' ')[1] || ''
-  const [username, password] = Buffer.from(b64auth, 'base64').toString().split(':')
-  return lookupUser(username, password)
+  const token = (authorization || '').split(' ')[1] || '';
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.user;
+  }
+  catch (error) {
+  }
+  return null;
 }
 
 async function lookupUser(username: string, password: string): Promise<string> {
@@ -96,7 +108,7 @@ app.post("/login", async (request: Request, response: Response) => {
     const body: LoginBody = request.body
     const username = await lookupUser(body.username, body.password)
     if (username) {
-      response.status(200).send()
+      response.status(200).send(createJWT(username))
     } else {
       response.status(404).send(USER_NOT_FOUND_ERROR)
     }

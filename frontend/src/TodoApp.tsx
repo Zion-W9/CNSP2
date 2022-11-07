@@ -4,7 +4,7 @@ import Main from './Main';
 import { TransitionGroup } from 'react-transition-group';
 import { Add, CheckCircle, Delete, Logout } from '@mui/icons-material';
 import AddTodoDialog from './AddTodoDialog';
-import { fetchBackend } from './util/backend';
+import { fetchBackend, isTokenExpired } from './util/backend';
 import CustomCollapse from './CustomCollapse';
 import { useNavigate } from "react-router-dom";
 
@@ -17,7 +17,6 @@ type TodoItem = {
 const TodoApp = (): JSX.Element => {
   const theme = useTheme();
   const [todos, setTodos] = useState<TodoItem[]>([]);
-  const [username, password] = atob(localStorage.getItem('auth') as string).split(':');
   const [openAddDialog, setOpenAddDialog] = useState<boolean>(false);
   const [editField, setEditField] = useState<number | null>(null);
   const [editedContent, setEditedContent] = useState<string>('');
@@ -29,23 +28,38 @@ const TodoApp = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const username = sessionStorage.getItem('user');
+
   useEffect(() => {
     const initLoad = async () => {
+      if (!checkSession()) return;
       try {
         const res = await fetchBackend('/todo', true);
         setTodos(await res.json());
       }
       catch {
-        setError('Could not add new item!');
+        setError('Could not load your todos!');
       }
       setLoading(null);
     };
     initLoad();
   }, []);
 
+  const checkSession = () => {
+    const token = sessionStorage.getItem('auth');
+    if (!token || isTokenExpired(token)) {
+      sessionStorage.removeItem('auth');
+      sessionStorage.setItem('error', 'Session expired! Please log in again.');
+      navigate('/login');
+      return false;
+    }
+    return true;
+  }
+
   const handleItemAdd = async (todo: string) => {
     setOpenAddDialog(false);
     setError(null);
+    if (!checkSession()) return;
     try {
       const res = await fetchBackend('/todo', true, {
         method: 'POST',
@@ -57,7 +71,7 @@ const TodoApp = (): JSX.Element => {
       setTodos(await res.json());
     }
     catch {
-      setError('Could not load your todos!');
+      setError('Could not add new item!');
     }
   };
 
@@ -70,6 +84,7 @@ const TodoApp = (): JSX.Element => {
 
   const sendItemEdit = async (i: number, item: TodoItem) => {
     setError(null);
+    if (!checkSession()) return;
     setLoading(i);
     try {
       const res = await fetchBackend(`/TODO/${item.id}`, true, {
@@ -106,6 +121,7 @@ const TodoApp = (): JSX.Element => {
 
   const handleItemDelete = async (i: number, item: TodoItem) => {
     setError(null);
+    if (!checkSession()) return;
     setLoading(i);
     try {
       const res = await fetchBackend(`/TODO/${item.id}`, true, {
@@ -124,7 +140,7 @@ const TodoApp = (): JSX.Element => {
   };
 
   const handleLogoutClick = () => {
-    localStorage.removeItem('auth');
+    sessionStorage.removeItem('auth');
     navigate('/login');
   };
 
@@ -190,6 +206,15 @@ const TodoApp = (): JSX.Element => {
       />
     </CustomCollapse>
   ));
+  if (todoItems.length === 0) {
+    todoItems.push(
+      <CustomCollapse orientation="vertical" timeout={1000} delay={0} key="placeholder">
+        <Typography color="textSecondary" align="center">
+          you have no todos!
+        </Typography>
+      </CustomCollapse>
+    );
+  }
 
   return (
     <Main>
@@ -201,16 +226,16 @@ const TodoApp = (): JSX.Element => {
           margin: 2,
           width: '900px'
         }}>
-          <IconButton 
-            color="primary" 
+          <IconButton
+            color="primary"
             sx={{
-              display: 'flex', 
-              marginLeft: 'auto !important', 
+              display: 'flex',
+              marginLeft: 'auto !important',
               marginRight: 0
-              }}
+            }}
             onClick={handleLogoutClick}
           >
-            <Logout/>
+            <Logout />
           </IconButton>
           <Box>
             <Typography variant="h3" color="primary">

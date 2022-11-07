@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box, Button, Grow, Link, Paper, TextField, Typography } from '@mui/material';
 import Main from './Main';
 import { fetchBackend } from './util/backend';
@@ -10,6 +10,16 @@ const TodoApp = (props: { register: boolean }): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // load errors from other parts of the app if we were redirected here
+  useEffect(() => {
+    if (sessionStorage.getItem('error') !== null) {
+      setError(sessionStorage.getItem('error'));
+    }
+    if (sessionStorage.getItem('user') !== null) {
+      setUsername(sessionStorage.getItem('user') ?? '');
+    }
+  }, []);
+
   const trySubmit = async () => {
     try {
       const resp = await fetchBackend(props.register ? '/register' : '/login', false, {
@@ -20,7 +30,8 @@ const TodoApp = (props: { register: boolean }): JSX.Element => {
         throw new Error();
       }
       // login succeeded
-      localStorage.setItem('auth', btoa(`${username}:${password}`));
+      sessionStorage.setItem('auth', await resp.text());
+      sessionStorage.setItem('user', username);
       navigate('/');
     }
     catch {
