@@ -29,6 +29,20 @@ const db = new Pool({
   port: parseInt(process.env.DB_PORT),
 })
 
+db.query(`
+  CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password TEXT
+  );
+  
+  CREATE TABLE IF NOT EXISTS todos (
+    ID SERIAL PRIMARY KEY,
+    text TEXT,
+    username TEXT REFERENCES users (username),
+    done BOOLEAN
+  );`
+).then(() => console.log("Created database tables"))
+.catch(() => console.log("Database tables could not be created"))
 
 const port = 3000
 const app = express();

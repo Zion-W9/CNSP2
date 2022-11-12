@@ -3,14 +3,12 @@ services:
   todo-db:
     container_name: todo-db
     image: postgres
+    networks:
+      - backend
     environment:
       POSTGRES_DB: cnsp
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
-    volumes:
-      - ./db/:/docker-entrypoint-initdb.d/
-    ports:
-      - 5432:5432
   todo-frontend:
     build: 
       context: ./frontend
@@ -18,11 +16,18 @@ services:
         REACT_APP_ENV: production
         REACT_APP_BACKEND_URL: http://localhost:3001
     container_name: todo-frontend
+    networks:
+      - frontend
     ports:
       - 3000:3000
   todo-backend:
     build: ./backend
     container_name: todo-backend
+    depends_on:
+      - todo-db
+    networks:
+      - frontend
+      - backend
     ports:
       - 3001:3000
     environment:
@@ -32,3 +37,10 @@ services:
       DB_HOST: todo-db
       DB_PORT: 5432
       JWT_SECRET: mjk-qgz7fwh_kac@RBF
+
+
+networks:
+  frontend:
+    internal: false
+  backend:
+    internal: true
