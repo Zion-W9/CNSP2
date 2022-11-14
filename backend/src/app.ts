@@ -1,9 +1,10 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Pool } from 'pg';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { check, validationResult } from 'express-validator';
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -50,6 +51,7 @@ app.use(express.json());
 app.use(cors({
   origin: 'http://localhost:3000'
 }));
+app.disable('x-powered-by');
 app.use(apiLimiter);
 
 type RegisterBody = { username: string, password: string };
@@ -61,6 +63,7 @@ const USER_ALREADY_EXISTS_ERROR = "Username already exists";
 const USER_NOT_FOUND_ERROR = "Username or password incorrect";
 const PASSWORD_TOO_SHORT_ERROR = "Password too short";
 const UNAUTHORIZED_ERROR = "User unauthorized";
+const SYNTAX_ERROR = "Message body not correct";
 const UNEXPECTED_ERROR = "An unexpected error has occured";
 
 
@@ -100,18 +103,33 @@ async function getTodos(username: string) {
   return result.rows
 }
 
+// Handle the error when the body was not parsed correctly
+app.use((error: Error, request: Request, response: Response, next: NextFunction) => {
+  if (error instanceof SyntaxError) {
+    return response.status(400).send(SYNTAX_ERROR);
+  }
+  next();
+})
+
 app.post("/register", createAccountLimiter, async (request: Request, response: Response) => {
   try {
     const body: RegisterBody = request.body
-    if (await checkUserExists(body.username)) {
-      response.status(409).send(USER_ALREADY_EXISTS_ERROR)
-    } else if (body.password.length < 8) {
-      response.status(403).send(PASSWORD_TOO_SHORT_ERROR)
-    } else {
-      const hash = bcrypt.hashSync(body.password)
-      await db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [body.username, hash])
-      response.status(200).send()
+
+    await check("username").notEmpty().run(request)
+    await check("password").notEmpty().run(request)
+    if (!validationResult(request).isEmpty()) {
+      return response.status(400).send(SYNTAX_ERROR)
     }
+    if (await checkUserExists(body.username)) {
+      return response.status(409).send(USER_ALREADY_EXISTS_ERROR)
+    }
+    if (body.password.length < 8) {
+      return response.status(403).send(PASSWORD_TOO_SHORT_ERROR)
+    }
+
+    const hash = bcrypt.hashSync(body.password)
+    await db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [body.username, hash])
+    response.status(200).send()
   } catch (err) {
     response.status(500).send(UNEXPECTED_ERROR)
   }
@@ -120,6 +138,13 @@ app.post("/register", createAccountLimiter, async (request: Request, response: R
 app.post("/login", async (request: Request, response: Response) => {
   try {
     const body: LoginBody = request.body
+
+    await check("username").notEmpty().run(request)
+    await check("password").notEmpty().run(request)
+    if (!validationResult(request).isEmpty()) {
+      return response.status(400).send(SYNTAX_ERROR)
+    }
+
     const username = await lookupUser(body.username, body.password)
     if (username) {
       response.status(200).send(createJWT(username))
@@ -147,6 +172,12 @@ app.get("/todo", async (request: Request, response: Response) => {
 app.post("/todo", async (request: Request, response: Response) => {
   try {
     const body: PostBody = request.body
+
+    await check("todo").notEmpty().run(request)
+    if (!validationResult(request).isEmpty()) {
+      return response.status(400).send(SYNTAX_ERROR)
+    }
+
     const username = await authorize(request.headers.authorization)
     if (username) {
       await db.query("INSERT INTO todos (text, username, done) VALUES ($1, $2, $3)", [body.todo, username, false])
@@ -162,6 +193,13 @@ app.post("/todo", async (request: Request, response: Response) => {
 app.patch("/todo/:id", async (request: Request, response: Response) => {
   try {
     const body: PatchBody = request.body;
+
+    await check("text").notEmpty().run(request)
+    await check("done").isBoolean().run(request)
+    if (!validationResult(request).isEmpty()) {
+      return response.status(400).send(SYNTAX_ERROR)
+    }
+
     const username = await authorize(request.headers.authorization)
     if (username) {
       await db.query("UPDATE todos SET text = $1, done = $2 WHERE id = $3 AND username = $4", [body.text, body.done, request.params.id, username])
