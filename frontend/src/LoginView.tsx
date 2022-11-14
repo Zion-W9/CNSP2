@@ -87,7 +87,7 @@ const TodoApp = (props: { register: boolean }): JSX.Element => {
             variant="contained"
             color="primary"
             sx={{ marginTop: 2 }}
-            disabled={!username.length || !password.length}
+            disabled={!username.length || password.length < 8}
             onClick={trySubmit}
           >
             {props.register ? 'Register' : 'Login'}
